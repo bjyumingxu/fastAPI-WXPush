@@ -125,6 +125,24 @@ class WorkWeChatService:
                 errmsg = response_data.get("errmsg", "Unknown error")
                 if errcode != 0:
                     error_msg = f"企业微信 API 错误: errcode={errcode}, errmsg={errmsg}"
+                    # 提取 hint 和 from_ip（如果存在）
+                    hint = response_data.get("hint", "")
+                    from_ip = None
+                    if "from ip:" in errmsg.lower():
+                        try:
+                            from_ip = errmsg.split("from ip:")[-1].split(",")[0].strip()
+                        except Exception:
+                            pass
+                    
+                    # 针对常见错误提供更友好的提示
+                    if errcode == 60020:
+                        ip_info = f" IP: {from_ip}" if from_ip else ""
+                        error_msg += (
+                            f"\n\n💡 解决方案：此错误表示 IP 地址未在白名单中。"
+                            f"请在企业微信管理后台 -> 应用管理 -> [您的应用] -> 企业可信 IP 中添加{ip_info}"
+                            f"\n详细配置步骤请参考：企业微信IP白名单配置指南.md"
+                        )
+                    
                     logger.error(error_msg)
                     raise ValueError(error_msg)
 
